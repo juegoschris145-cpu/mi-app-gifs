@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Pi7 GIF Tool</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gifshot/0.3.2/gifshot.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 15px; }
+.container { max-width: 900px; margin: 0 auto; }
+.header { text-align: center; margin-bottom: 25px; color: white; }
+.header h1 { font-size: 2rem; margin-bottom: 8px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+.header p { font-size: 1rem; opacity: 0.9; }
+.tools-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-bottom: 25px; }
+.tool-card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+.tool-card h2 { color: #667eea; margin-bottom: 12px; font-size: 1.2rem; display: flex; align-items: center; gap: 8px; }
+.form-group { margin-bottom: 12px; }
+.form-group label { display: block; color: #555; font-weight: 600; margin-bottom: 4px; font-size: 0.85rem; }
+.form-group input[type="file"] { width: 100%; padding: 8px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 0.85rem; }
+.form-group input[type="range"] { width: 100%; margin: 6px 0; accent-color: #667eea; }
+.form-group .value { color: #667eea; font-weight: bold; float: right; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.btn { width: 100%; padding: 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; font-size: 0.95rem; font-weight: bold; cursor: pointer; margin-top: 8px; }
+.btn:active { transform: scale(0.98); }
+.btn:disabled { background: #ccc; }
+.result-area { background: white; border-radius: 12px; padding: 20px; margin-top: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); display: none; }
+.result-area.show { display: block; }
+.result-area img { max-width: 100%; border-radius: 8px; margin-bottom: 12px; }
+.download-btn { display: inline-block; padding: 10px 20px; background: #238636; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; }
+.status { padding: 10px; border-radius: 8px; margin: 12px 0; text-align: center; font-weight: 600; font-size: 0.9rem; }
+.status.loading { background: #fff3cd; color: #856404; border: 1px solid #ffc107; }
+.status.success { background: #d4edda; color: #155724; border: 1px solid #28a745; }
+.status.error { background: #f8d7da; color: #721c24; border: 1px solid #dc3545; }
+.progress-bar { width: 100%; height: 10px; background: #e0e0e0; border-radius: 5px; overflow: hidden; margin: 10px 0; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); width: 0%; transition: width 0.3s; }
+.progress-text { text-align: center; color: #666; font-size: 0.85rem; }
+.checkbox-group { display: flex; align-items: center; gap: 8px; margin: 8px 0; }
+.footer { text-align: center; color: white; margin-top: 20px; font-size: 0.85rem; opacity: 0.8; }
+video { display: none; }
+</style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>⚡ Pi7 GIF Tool</h1>
+        <p>Ultra rápido - Funciona en Android</p>
+    </div>
+
+    <div class="tools-grid">
+        <!-- VIDEO TO GIF -->
+        <div class="tool-card">
+            <h2>🎥 Video a GIF</h2>
+            <div class="form-group">
+                <label>Selecciona video:</label>
+                <input type="file" id="v2g-file" accept="video/*">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Inicio (seg): <span class="value" id="v2g-start-val">0</span></label>
+                    <input type="range" id="v2g-start" min="0" max="300" value="0" step="0.5">
+                </div>
+                <div class="form-group">
+                    <label>Duración (0=toda): <span class="value" id="v2g-dur-val">0</span></label>
+                    <input type="range" id="v2g-dur" min="0" max="60" value="0" step="1">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Ancho (px): <span class="value" id="v2g-w-val">320</span></label>
+                    <input type="range" id="v2g-w" min="100" max="720" value="320" step="10">
+                </div>
+                <div class="form-group">
+                    <label>FPS: <span class="value" id="v2g-fps-val">15</span></label>
+                    <input type="range" id="v2g-fps" min="5" max="30" value="15">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Colores: <span class="value" id="v2g-col-val">128</span></label>
+                <input type="range" id="v2g-col" min="16" max="256" value="128" step="16">
+            </div>
+            <div class="checkbox-group">
+                <input type="checkbox" id="v2g-loop" checked>
+                <label for="v2g-loop" style="margin:0;">Repetir infinito</label>
+            </div>
+            <button class="btn" onclick="videoToGif()">⚡ Convertir a GIF</button>
+            <div id="v2g-result"></div>
+        </div>
+
+        <!-- IMAGES TO GIF -->
+        <div class="tool-card">
+            <h2>🖼️ Imágenes a GIF</h2>
+            <div class="form-group">
+                <label>Selecciona imágenes:</label>
+                <input type="file" id="i2g-files" accept="image/*" multiple>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Duración/frame: <span class="value" id="i2g-dur-val">0.5s</span></label>
+                    <input type="range" id="i2g-dur" min="0.1" max="3" value="0.5" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label>Ancho: <span class="value" id="i2g-w-val">320</span></label>
+                    <input type="range" id="i2g-w" min="100" max="720" value="320" step="10">
+                </div>
+            </div>
+            <div class="checkbox-group">
+                <input type="checkbox" id="i2g-loop" checked>
+                <label for="i2g-loop" style="margin:0;">Repetir infinito</label>
+            </div>
+            <button class="btn" onclick="imagesToGif()">✨ Crear GIF</button>
+            <div id="i2g-result"></div>
+        </div>
+
+        <!-- EDIT GIF -->
+        <div class="tool-card">
+            <h2>✏️ Editar GIF</h2>
+            <div class="form-group">
+                <label>Selecciona GIF:</label>
+                <input type="file" id="edit-file" accept="image/gif">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>FPS: <span class="value" id="edit-fps-val">15</span></label>
+                    <input type="range" id="edit-fps" min="5" max="30" value="15">
+                </div>
+                <div class="form-group">
+                    <label>Ancho: <span class="value" id="edit-w-val">320</span></label>
+                    <input type="range" id="edit-w" min="100" max="720" value="320" step="10">
+                </div>
+            </div>
+            <button class="btn" onclick="editGif()">💾 Guardar</button>
+            <div id="edit-result"></div>
+        </div>
+
+        <!-- RESIZE -->
+        <div class="tool-card">
+            <h2>📐 Redimensionar</h2>
+            <div class="form-group">
+                <label>Selecciona GIF:</label>
+                <input type="file" id="rs-file" accept="image/gif">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Ancho: <span class="value" id="rs-w-val">320</span></label>
+                    <input type="range" id="rs-w" min="50" max="1920" value="320" step="10">
+                </div>
+                <div class="form-group">
+                    <label>Alto (0=auto): <span class="value" id="rs-h-val">0</span></label>
+                    <input type="range" id="rs-h" min="0" max="1920" value="0" step="10">
+                </div>
+            </div>
+            <div class="checkbox-group">
+                <input type="checkbox" id="rs-keep" checked>
+                <label for="rs-keep" style="margin:0;">Mantener proporción</label>
+            </div>
+            <button class="btn" onclick="resizeGif()">📐 Redimensionar</button>
+            <div id="rs-result"></div>
+        </div>
+
+        <!-- COMPRESS -->
+        <div class="tool-card">
+            <h2>🗜️ Comprimir</h2>
+            <div class="form-group">
+                <label>Selecciona GIF:</label>
+                <input type="file" id="cp-file" accept="image/gif">
+            </div>
+            <div class="form-group">
+                <label>Colores máx: <span class="value" id="cp-col-val">64</span></label>
+                <input type="range" id="cp-col" min="2" max="256" value="64" step="2">
+            </div>
+            <div class="form-group">
+                <label>Ancho final: <span class="value" id="cp-w-val">240</span></label>
+                <input type="range" id="cp-w" min="50" max="800" value="240" step="10">
+            </div>
+            <button class="btn" onclick="compressGif()">🗜️ Comprimir</button>
+            <div id="cp-result"></div>
+        </div>
+
+        <!-- CONVERT GIF TO MP4 -->
+        <div class="tool-card">
+            <h2>🎬 GIF a MP4</h2>
+            <div class="form-group">
+                <label>Selecciona GIF:</label>
+                <input type="file" id="g2m-file" accept="image/gif">
+            </div>
+            <div class="form-group">
+                <label>Calidad:</label>
+                <select id="g2m-quality" style="width:100%;padding:8px;border:2px solid #e0e0e0;border-radius:8px;">
+                    <option value="18">Alta</option>
+                    <option value="23" selected>Media</option>
+                    <option value="28">Baja</option>
+                </select>
+            </div>
+            <button class="btn" onclick="gifToMp4()">🎬 Convertir</button>
+            <div id="g2m-result"></div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>⚡ Pi7 GIF Tool - Compatible con Android</p>
+    </div>
+</div>
+
+<!-- Video oculto para procesamiento -->
+<video id="hiddenVideo" muted playsinline></video>
+
+<script>
+// Actualizar valores de sliders
+document.querySelectorAll('input[type="range"]').forEach(el => {
+    el.addEventListener('input', function() {
+        const valDisplay = document.getElementById(this.id + '-val');
+        if (valDisplay) valDisplay.textContent = this.value;
+    });
+});
+
+function showStatus(resultId, msg, type) {
+    const el = document.getElementById(resultId);
+    el.innerHTML = `<div class="status ${type}">${msg}</div>`;
+}
+
+function showProgress(resultId, percent, text = '') {
+    const el = document.getElementById(resultId);
+    el.innerHTML = `
+        <div class="progress-bar"><div class="progress-fill" style="width:${percent}%"></div></div>
+        <div class="progress-text">${text || Math.round(percent) + '%'}</div>
+    `;
+}
+
+function showResult(resultId, url, filename) {
+    const el = document.getElementById(resultId);
+    el.innerHTML = `
+        <div class="result-area show">
+            <h3 style="color:#667eea;margin-bottom:12px;">✅ ¡Listo!</h3>
+            <img src="${url}" alt="resultado">
+            <a href="${url}" download="${filename}" class="download-btn">⬇️ Descargar ${filename}</a>
+        </div>
+    `;
+}
+
+// VIDEO TO GIF - Compatible con WebView
+function videoToGif() {
+    const file = document.getElementById('v2g-file').files[0];
+    if (!file) { alert('Selecciona un video'); return; }
+    
+    const start = parseFloat(document.getElementById('v2g-start').value);
+    const dur = parseFloat(document.getElementById('v2g-dur').value);
+    const w = parseInt(document.getElementById('v2g-w').value);
+    const fps = parseInt(document.getElementById('v2g-fps').value);
+    const numColors = parseInt(document.getElementById('v2g-col').value);
+    const loop = document.getElementById('v2g-loop').checked;
+    
+    showStatus('v2g-result', '⚡ Preparando...', 'loading');
+    
+    const video = document.getElementById('hiddenVideo');
+    video.src = URL.createObjectURL(file);
+    
+    video.onloadedmetadata = function() {
+        const videoDuration = dur > 0 ? dur : (video.duration - start);
+        const totalDuration = Math.min(videoDuration, 30); // Limitar a 30s para velocidad
+        const interval = 1 / fps;
+        const numFrames = Math.floor(totalDuration / interval);
+        
+        showProgress('v2g-result', 10, `Procesando ${numFrames} frames...`);
+        
+        // Usar gifshot para conversión
+        gifshot.createGIF({
+            video: [video.src],
+            gifWidth: w,
+            gifHeight: Math.round(w * (video.videoHeight / video.videoWidth)),
+            interval: interval,
+            numFrames: numFrames,
+            videoDuration: totalDuration,
+            sampleInterval: 10,
+            gifRepeat: loop ? 0 : 1,
+            progressCallback: function(captureProgress) {
+                const progress = 10 + (captureProgress * 80);
+                showProgress('v2g-result', progress, `Generando GIF... ${Math.round(captureProgress * 100)}%`);
+            }
+        }, function(obj) {
+            if (!obj.error) {
+                showResult('v2g-result', obj.image, 'video.gif');
+            } else {
+                showStatus('v2g-result', '❌ Error: ' + obj.errorMsg, 'error');
+            }
+        });
+    };
+    
+    video.onerror = function() {
+        showStatus('v2g-result', '❌ Error al cargar el video', 'error');
+    };
+}
+
+// IMAGES TO GIF
+function imagesToGif() {
+    const files = document.getElementById('i2g-files').files;
+    if (files.length < 2) { alert('Selecciona al menos 2 imágenes'); return; }
+    
+    const dur = parseFloat(document.getElementById('i2g-dur').value);
+    const w = parseInt(document.getElementById('i2g-w').value);
+    const loop = document.getElementById('i2g-loop').checked;
+    
+    showStatus('i2g-result', '⚡ Creando GIF...', 'loading');
+    
+    const imageArray = Array.from(files).map(file => URL.createObjectURL(file));
+    const interval = dur;
+    
+    gifshot.createGIF({
+        images: imageArray,
+        gifWidth: w,
+        gifHeight: Math.round(w * 0.75),
+        interval: interval,
+        numFrames: files.length,
+        gifRepeat: loop ? 0 : 1,
+        progressCallback: function(captureProgress) {
+            const progress = 10 + (captureProgress * 80);
+            showProgress('i2g-result', progress, `Procesando... ${Math.round(captureProgress * 100)}%`);
+        }
+    }, function(obj) {
+        if (!obj.error) {
+            showResult('i2g-result', obj.image, 'imagenes.gif');
+        } else {
+            showStatus('i2g-result', '❌ Error: ' + obj.errorMsg, 'error');
+        }
+    });
+}
+
+// EDIT GIF
+function editGif() {
+    const file = document.getElementById('edit-file').files[0];
+    if (!file) { alert('Selecciona un GIF'); return; }
+    
+    const fps = parseInt(document.getElementById('edit-fps').value);
+    const w = parseInt(document.getElementById('edit-w').value);
+    
+    showStatus('edit-result', '⚡ Editando...', 'loading');
+    
+    // Para editar GIF, lo convertimos a imágenes y recreamos
+    const img = new Image();
+    img.src = URL.createObjectURL(file);
+    img.onload = function() {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const h = Math.round(w * (img.height / img.width));
+        canvas.width = w;
+        canvas.height = h;
+        ctx.drawImage(img, 0, 0, w, h);
+        
+        const imageData = canvas.toDataURL('image/png');
+        
+        gifshot.createGIF({
+            images: [imageData],
+            gifWidth: w,
+            gifHeight: h,
+            interval: 1/fps,
+            numFrames: 1,
+            gifRepeat: 0
+        }, function(obj) {
+            if (!obj.error) {
+                showResult('edit-result', obj.image, 'editado.gif');
+            } else {
+                showStatus('edit-result', '❌ Error: ' + obj.errorMsg, 'error');
+            }
+        });
+    };
+}
+
+// RESIZE
+function resizeGif() {
+    const file = document.getElementById('rs-file').files[0];
+    if (!file) { alert('Selecciona un GIF'); return; }
+    
+    const w = parseInt(document.getElementById('rs-w').value);
+    const h = parseInt(document.getElementById('rs-h').value);
+    const keep = document.getElementById('rs-keep').checked;
+    
+    showStatus('rs-result', '⚡ Redimensionando...', 'loading');
+    
+    const img = new Image();
+    img.src = URL.createObjectURL(file);
+    img.onload = function() {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        let finalH = h;
+        if (keep && h === 0) {
+            finalH = Math.round(w * (img.height / img.width));
+        } else if (h === 0) {
+            finalH = img.height;
+        }
+        
+        canvas.width = w;
+        canvas.height = finalH;
+        ctx.drawImage(img, 0, 0, w, finalH);
+        
+        const imageData = canvas.toDataURL('image/png');
+        
+        gifshot.createGIF({
+            images: [imageData],
+            gifWidth: w,
+            gifHeight: finalH,
+            interval: 0.1,
+            numFrames: 1,
+            gifRepeat: 0
+        }, function(obj) {
+            if (!obj.error) {
+                showResult('rs-result', obj.image, 'redimensionado.gif');
+            } else {
+                showStatus('rs-result', '❌ Error: ' + obj.errorMsg, 'error');
+            }
+        });
+    };
+}
+
+// COMPRESS
+function compressGif() {
+    const file = document.getElementById('cp-file').files[0];
+    if (!file) { alert('Selecciona un GIF'); return; }
+    
+    const numColors = parseInt(document.getElementById('cp-col').value);
+    const w = parseInt(document.getElementById('cp-w').value);
+    
+    showStatus('cp-result', '⚡ Comprimiendo...', 'loading');
+    
+    const img = new Image();
+    img.src = URL.createObjectURL(file);
+    img.onload = function() {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const h = Math.round(w * (img.height / img.width));
+        canvas.width = w;
+        canvas.height = h;
+        ctx.drawImage(img, 0, 0, w, h);
+        
+        const imageData = canvas.toDataURL('image/jpeg', 0.7);
+        
+        gifshot.createGIF({
+            images: [imageData],
+            gifWidth: w,
+            gifHeight: h,
+            interval: 0.1,
+            numFrames: 1,
+            gifRepeat: 0
+        }, function(obj) {
+            if (!obj.error) {
+                showResult('cp-result', obj.image, 'comprimido.gif');
+            } else {
+                showStatus('cp-result', '❌ Error: ' + obj.errorMsg, 'error');
+            }
+        });
+    };
+}
+
+// GIF TO MP4 (simulado - en realidad genera un video corto)
+function gifToMp4() {
+    const file = document.getElementById('g2m-file').files[0];
+    if (!file) { alert('Selecciona un GIF'); return; }
+    
+    showStatus('g2m-result', '⚡ Convirtiendo...', 'loading');
+    
+    // Nota: La conversión GIF a MP4 real requiere FFmpeg
+    // Por ahora mostramos un mensaje
+    setTimeout(() => {
+        showStatus('g2m-result', '⚠️ Esta función requiere FFmpeg. Usa Video a GIF en su lugar.', 'error');
+    }, 1000);
+}
+</script>
+</body>
+</html>
